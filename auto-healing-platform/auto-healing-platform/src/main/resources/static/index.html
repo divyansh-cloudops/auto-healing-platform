@@ -1,0 +1,816 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#080d18">
+<title>Auto-Healing Platform | Dashboard</title>
+
+<style>
+:root {
+    color-scheme: dark;
+    --bg: #080d18;
+    --card: #111b2c;
+    --border: #283750;
+    --text: #edf3fc;
+    --muted: #94a3b8;
+    --green: #45d6a0;
+    --red: #ff7285;
+    --yellow: #f5c866;
+    --blue: #78aaff;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: radial-gradient(ellipse at top left, #172747, transparent 42%), var(--bg);
+    color: var(--text);
+}
+
+header {
+    padding: 24px clamp(18px, 5vw, 64px);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 18px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(8, 13, 24, .9);
+}
+
+.brand { display: flex; align-items: center; gap: 14px; }
+
+.logo {
+    width: 46px;
+    height: 46px;
+    display: grid;
+    place-items: center;
+    border-radius: 13px;
+    background: linear-gradient(135deg, #347df3, #2250b5);
+    font-size: 23px;
+    font-weight: 800;
+}
+
+h1 {
+    margin: 0;
+    font-size: clamp(21px, 3vw, 29px);
+    letter-spacing: -.5px;
+}
+
+header p {
+    color: var(--muted);
+    margin: 7px 0 0;
+    font-size: 13px;
+}
+
+.connection {
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 30px;
+    color: var(--yellow);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.connection.online { color: var(--green); border-color: #245541; }
+.connection.offline { color: var(--red); border-color: #63303c; }
+
+main {
+    max-width: 1300px;
+    margin: auto;
+    padding: 30px 22px 40px;
+}
+
+.heading {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-bottom: 22px;
+}
+
+.eyebrow {
+    color: var(--blue);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin: 0 0 8px;
+}
+
+h2 { margin: 0; font-size: 19px; }
+
+.muted { color: var(--muted); font-size: 13px; line-height: 1.6; }
+
+.cards {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 17px;
+}
+
+.card, .panel {
+    background: linear-gradient(145deg, #131e30, var(--card));
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 12px 30px rgba(0,0,0,.15);
+}
+
+.card {
+    padding: 22px;
+    min-width: 0;
+    transition: transform .15s ease, border-color .15s ease;
+}
+
+.card:hover { transform: translateY(-3px); border-color: #496185; }
+
+.label { color: var(--muted); font-size: 13px; font-weight: 600; }
+
+.metric {
+    margin: 17px 0 8px;
+    font-size: clamp(22px, 2.5vw, 29px);
+    font-weight: 800;
+    overflow-wrap: anywhere;
+}
+
+.good { color: var(--green); }
+.bad { color: var(--red); }
+.warning { color: var(--yellow); }
+.neutral { color: var(--text); }
+.blue { color: var(--blue); }
+
+.card .muted { margin-bottom: 0; font-size: 12px; }
+
+.layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 18px;
+    margin-top: 20px;
+}
+
+.panel { padding: 23px; min-width: 0; }
+
+.panel-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.tag {
+    color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 5px 8px;
+    border-radius: 7px;
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+.details { display: grid; }
+
+.detail-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 15px 0;
+    border-top: 1px solid var(--border);
+}
+
+.detail-row:first-child { border-top: 0; }
+
+.detail-name { color: var(--muted); font-size: 13px; }
+
+.detail-value {
+    text-align: right;
+    font-size: 13px;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+button {
+    border: 1px solid #528cff;
+    border-radius: 9px;
+    padding: 10px 15px;
+    background: linear-gradient(135deg, #347df3, #2456c8);
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+button:hover { filter: brightness(1.15); }
+button:disabled { opacity: .6; cursor: wait; }
+
+#logs, #historyEvents {
+    max-height: 390px;
+    overflow-y: auto;
+    scrollbar-color: #354765 var(--card);
+}
+
+.event {
+    display: grid;
+    grid-template-columns: 8px minmax(0, 1fr);
+    gap: 12px;
+    padding: 13px 0;
+    border-top: 1px solid var(--border);
+}
+
+.event:first-child { border-top: 0; }
+
+.event-dot {
+    width: 7px;
+    height: 7px;
+    margin-top: 6px;
+    border-radius: 50%;
+    background: #72839c;
+}
+
+.event-dot.good { background: var(--green); }
+.event-dot.bad { background: var(--red); }
+.event-dot.warning { background: var(--yellow); }
+.event-dot.info { background: var(--blue); }
+
+.event-text, .history-message {
+    color: #c4d0e2;
+    font: 12px/1.65 Consolas, "Courier New", monospace;
+    overflow-wrap: anywhere;
+}
+
+.history-event {
+    display: grid;
+    grid-template-columns: 90px minmax(0, 1fr);
+    gap: 12px;
+    padding: 13px 0;
+    border-top: 1px solid var(--border);
+}
+
+.history-event:first-child { border-top: 0; }
+
+.history-type {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .4px;
+    padding-top: 2px;
+}
+
+.history-type.recovery { color: var(--green); }
+.history-type.warning { color: var(--yellow); }
+.history-type.error { color: var(--red); }
+.history-type.info { color: var(--blue); }
+
+.notice {
+    display: none;
+    margin-bottom: 18px;
+    padding: 13px 15px;
+    border: 1px solid #63303c;
+    border-radius: 10px;
+    background: #28151d;
+    color: #ffb7c0;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.notice.show { display: block; }
+
+footer {
+    padding: 23px;
+    text-align: center;
+    border-top: 1px solid var(--border);
+    color: #71829a;
+    font-size: 12px;
+}
+
+@media (max-width: 950px) {
+    .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .layout { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 520px) {
+    header { padding: 20px 16px; }
+    main { padding: 22px 14px 30px; }
+    .cards { grid-template-columns: 1fr; }
+    .card, .panel { padding: 18px; }
+    .detail-row { align-items: flex-start; }
+    .detail-value { max-width: 58%; }
+    .history-event { grid-template-columns: 1fr; gap: 5px; }
+}
+</style>
+</head>
+
+<body>
+<header>
+    <div class="brand">
+        <div class="logo">A</div>
+        <div>
+            <h1>Auto-Healing Platform</h1>
+            <p>Container operations and recovery monitoring</p>
+        </div>
+    </div>
+    <div class="connection" id="connection" role="status">
+        ● Connecting to monitoring API
+    </div>
+</header>
+
+<main>
+    <div class="heading">
+        <div>
+            <p class="eyebrow">Operations overview</p>
+            <h2>System Health</h2>
+            <p class="muted">Application status, Docker health and automatic recovery metrics.</p>
+        </div>
+        <div class="muted">
+            Last checked: <strong id="lastChecked">Waiting...</strong>
+            <br><br>
+            <button id="refreshButton" type="button">↻ Refresh Now</button>
+        </div>
+    </div>
+
+    <div class="notice" id="errorNotice" role="alert"></div>
+
+    <section class="cards">
+        <article class="card">
+            <div class="label">Application Status</div>
+            <div class="metric neutral" id="appStatus">Checking...</div>
+            <p class="muted">Spring Boot /health endpoint</p>
+        </article>
+
+        <article class="card">
+            <div class="label">Container Status</div>
+            <div class="metric neutral" id="containerStatus">Checking...</div>
+            <p class="muted" id="containerName">auto-healing-app</p>
+        </article>
+
+        <article class="card">
+            <div class="label">Docker Health</div>
+            <div class="metric neutral" id="healthStatus">Checking...</div>
+            <p class="muted">Docker health check result</p>
+        </article>
+
+        <article class="card">
+            <div class="label">Container Uptime</div>
+            <div class="metric blue" id="uptime">--</div>
+            <p class="muted">Time since container started</p>
+        </article>
+    </section>
+
+    <section class="cards" style="margin-top:17px">
+        <article class="card">
+            <div class="label">Recovery Count</div>
+            <div class="metric good" id="recoveryCount">--</div>
+            <p class="muted">Successful recoveries recorded</p>
+        </article>
+
+        <article class="card">
+            <div class="label">Recovery Attempts</div>
+            <div class="metric neutral" id="recoveryAttempts">--</div>
+            <p class="muted">Recorded recovery attempts</p>
+        </article>
+
+        <article class="card">
+            <div class="label">Success Rate</div>
+            <div class="metric good" id="recoverySuccessRate">--</div>
+            <p class="muted">Successful recoveries / attempts</p>
+        </article>
+
+        <article class="card">
+            <div class="label">Refresh Interval</div>
+            <div class="metric blue">10 sec</div>
+            <p class="muted">Automatic dashboard updates</p>
+        </article>
+    </section>
+
+    <div class="layout">
+        <section class="panel">
+            <div class="panel-heading">
+                <div>
+                    <h2>Monitoring Details</h2>
+                    <p class="muted">Live data returned by the monitoring API.</p>
+                </div>
+                <span class="tag" id="apiTag">API: pending</span>
+            </div>
+
+            <div class="details">
+                <div class="detail-row">
+                    <span class="detail-name">Container name</span>
+                    <span class="detail-value" id="detailContainer">--</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-name">Container state</span>
+                    <span class="detail-value" id="detailState">--</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-name">Docker health</span>
+                    <span class="detail-value" id="detailHealth">--</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-name">Application endpoint</span>
+                    <span class="detail-value" id="detailApp">Not checked</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-name">Container started at</span>
+                    <span class="detail-value" id="startedAt">--</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-name">Last dashboard refresh</span>
+                    <span class="detail-value" id="detailLastChecked">--</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-heading">
+                <div>
+                    <h2>Recovery Activity</h2>
+                    <p class="muted">Recent recovery.log entries, newest first.</p>
+                </div>
+                <span class="tag" id="logCount">0 entries</span>
+            </div>
+
+            <div id="logs" aria-live="polite">
+                <p class="muted">Waiting for recovery logs...</p>
+            </div>
+        </section>
+    </div>
+
+    <section class="panel" style="margin-top:20px">
+        <div class="panel-heading">
+            <div>
+                <h2>Recovery History</h2>
+                <p class="muted">Complete event history from the monitoring API.</p>
+            </div>
+            <span class="tag" id="historyCount">Loading...</span>
+        </div>
+
+        <div id="historyEvents" aria-live="polite">
+            <p class="muted">Loading recovery history...</p>
+        </div>
+    </section>
+</main>
+
+<footer>Auto-Healing Platform · Spring Boot · Docker</footer>
+
+<script>
+const REFRESH_INTERVAL = 10000;
+
+let isLoading = false;
+let isHistoryLoading = false;
+let latestUptimeSeconds = null;
+let lastUptimeUpdate = null;
+
+function setMetric(id, value, goodValues = []) {
+    const element = document.getElementById(id);
+    const text = value == null || value === "" ? "unknown" : String(value);
+    const normalized = text.toLowerCase();
+
+    element.textContent = text.toUpperCase();
+
+    if (goodValues.includes(normalized)) {
+        element.className = "metric good";
+    } else if (
+        ["unhealthy", "exited", "dead", "unavailable",
+         "not-found-or-unavailable", "monitoring-unavailable",
+         "down", "error"].includes(normalized)
+    ) {
+        element.className = "metric bad";
+    } else if (
+        ["starting", "unknown", "no-healthcheck"].includes(normalized)
+    ) {
+        element.className = "metric warning";
+    } else {
+        element.className = "metric neutral";
+    }
+}
+
+function setConnection(state, message) {
+    const element = document.getElementById("connection");
+    element.className = "connection " + state;
+    element.textContent = "● " + message;
+}
+
+function formatUptime(totalSeconds) {
+    if (!Number.isFinite(totalSeconds) || totalSeconds < 0) {
+        return "--";
+    }
+
+    const seconds = Math.floor(totalSeconds);
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remainingSeconds = seconds % 60;
+
+    if (days > 0) return `${days}d ${hours}h ${minutes}m`;
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    if (minutes > 0) return `${minutes}m ${remainingSeconds}s`;
+
+    return `${remainingSeconds}s`;
+}
+
+function updateUptimeDisplay() {
+    if (latestUptimeSeconds === null || lastUptimeUpdate === null) {
+        document.getElementById("uptime").textContent = "--";
+        return;
+    }
+
+    const elapsed = Math.floor((Date.now() - lastUptimeUpdate) / 1000);
+
+    document.getElementById("uptime").textContent =
+        formatUptime(latestUptimeSeconds + Math.max(0, elapsed));
+}
+
+function formatStartedAt(value) {
+    if (!value) return "--";
+
+    const date = new Date(value);
+
+    return Number.isNaN(date.getTime())
+        ? String(value)
+        : date.toLocaleString();
+}
+
+function renderLogs(entries) {
+    const logs = document.getElementById("logs");
+    logs.replaceChildren();
+
+    // API returns newest-first, so keep the original order.
+    const list = Array.isArray(entries) ? entries : [];
+
+    document.getElementById("logCount").textContent =
+        list.length + (list.length === 1 ? " entry" : " entries");
+
+    if (list.length === 0) {
+        const empty = document.createElement("p");
+        empty.className = "muted";
+        empty.textContent = "No recovery log entries available.";
+        logs.appendChild(empty);
+        return;
+    }
+
+    list.forEach(line => {
+        const entry = document.createElement("div");
+        entry.className = "event";
+
+        const dot = document.createElement("span");
+        dot.className = "event-dot";
+
+        const message = String(line);
+        const normalized = message.toLowerCase();
+
+        if (
+            normalized.includes("recovery succeeded") ||
+            normalized.includes("start command succeeded") ||
+            normalized.includes("restart command succeeded") ||
+            normalized.includes("recovery successful")
+        ) {
+            dot.classList.add("good");
+        } else if (
+            normalized.includes("warning") ||
+            normalized.includes("attempting restart") ||
+            normalized.includes("restarting")
+        ) {
+            dot.classList.add("warning");
+        } else if (
+            normalized.includes("error") ||
+            normalized.includes("failed")
+        ) {
+            dot.classList.add("bad");
+        } else {
+            dot.classList.add("info");
+        }
+
+        const text = document.createElement("div");
+        text.className = "event-text";
+        text.textContent = message;
+
+        entry.append(dot, text);
+        logs.appendChild(entry);
+    });
+}
+
+function updateRecoveryMetrics(data) {
+    const count = Number(data.recoveryCount);
+    const attempts = Number(data.recoveryAttempts);
+    const successRate = Number(data.recoverySuccessRate);
+
+    setMetric("recoveryCount", Number.isFinite(count) ? count : 0);
+    setMetric("recoveryAttempts", Number.isFinite(attempts) ? attempts : 0);
+
+    const rateElement = document.getElementById("recoverySuccessRate");
+
+    if (data.recoverySuccessRate != null && Number.isFinite(successRate)) {
+        rateElement.textContent = successRate.toFixed(1) + "%";
+
+        if (successRate >= 80) {
+            rateElement.className = "metric good";
+        } else if (successRate >= 50) {
+            rateElement.className = "metric warning";
+        } else {
+            rateElement.className = "metric bad";
+        }
+    } else {
+        rateElement.textContent = "--";
+        rateElement.className = "metric neutral";
+    }
+}
+
+async function loadMonitoring() {
+    if (isLoading) return;
+
+    isLoading = true;
+
+    const button = document.getElementById("refreshButton");
+    button.disabled = true;
+    button.textContent = "Refreshing...";
+
+    try {
+        const response = await fetch("/api/monitoring", {
+            cache: "no-store"
+        });
+
+        if (!response.ok) {
+            throw new Error("Monitoring API returned HTTP " + response.status);
+        }
+
+        const data = await response.json();
+        let appStatus = "unavailable";
+
+        try {
+            const healthResponse = await fetch("/health", {
+                cache: "no-store"
+            });
+
+            if (!healthResponse.ok) {
+                throw new Error("Health endpoint returned HTTP " + healthResponse.status);
+            }
+
+            const app = await healthResponse.json();
+            appStatus = app.status || "unknown";
+
+            document.getElementById("detailApp").textContent = appStatus;
+        } catch (healthError) {
+            document.getElementById("detailApp").textContent = "Unavailable";
+        }
+
+        setConnection("online", "Monitoring API connected");
+        document.getElementById("apiTag").textContent = "API: connected";
+        document.getElementById("errorNotice").classList.remove("show");
+
+        setMetric("appStatus", appStatus, ["up"]);
+        setMetric("containerStatus", data.containerStatus, ["running"]);
+        setMetric("healthStatus", data.healthStatus, ["healthy"]);
+
+        document.getElementById("containerName").textContent =
+            data.container || "Docker container";
+
+        document.getElementById("detailContainer").textContent =
+            data.container || "Unknown";
+
+        document.getElementById("detailState").textContent =
+            data.containerStatus || "Unknown";
+
+        document.getElementById("detailHealth").textContent =
+            data.healthStatus || "Unknown";
+
+        const uptimeValue = Number(data.uptimeSeconds);
+
+        if (
+            data.containerStatus === "running" &&
+            data.uptimeSeconds != null &&
+            Number.isFinite(uptimeValue) &&
+            uptimeValue >= 0
+        ) {
+            latestUptimeSeconds = uptimeValue;
+            lastUptimeUpdate = Date.now();
+            updateUptimeDisplay();
+        } else {
+            latestUptimeSeconds = null;
+            lastUptimeUpdate = null;
+            document.getElementById("uptime").textContent = "--";
+        }
+
+        document.getElementById("startedAt").textContent =
+            formatStartedAt(data.startedAt);
+
+        updateRecoveryMetrics(data);
+        renderLogs(data.recoveryLogs);
+
+        const checkedTime = new Date().toLocaleTimeString();
+        document.getElementById("lastChecked").textContent = checkedTime;
+        document.getElementById("detailLastChecked").textContent = checkedTime;
+
+    } catch (error) {
+        setConnection("offline", "Monitoring unavailable");
+        document.getElementById("apiTag").textContent = "API: error";
+
+        setMetric("appStatus", "unavailable");
+        setMetric("containerStatus", "unavailable");
+        setMetric("healthStatus", "unknown");
+
+        document.getElementById("detailState").textContent = "Unavailable";
+        document.getElementById("detailHealth").textContent = "Unknown";
+        document.getElementById("detailApp").textContent = "Unavailable";
+
+        const notice = document.getElementById("errorNotice");
+        notice.textContent =
+            "Unable to load monitoring data. Confirm Spring Boot is running and /api/monitoring is reachable. " +
+            error.message;
+        notice.classList.add("show");
+
+    } finally {
+        isLoading = false;
+        button.disabled = false;
+        button.textContent = "↻ Refresh Now";
+    }
+}
+
+async function loadRecoveryHistory() {
+    if (isHistoryLoading) return;
+
+    isHistoryLoading = true;
+
+    const container = document.getElementById("historyEvents");
+    const countElement = document.getElementById("historyCount");
+
+    try {
+        const response = await fetch("/api/monitoring/history", {
+            cache: "no-store"
+        });
+
+        if (!response.ok) {
+            throw new Error("History API returned HTTP " + response.status);
+        }
+
+        const data = await response.json();
+        const events = Array.isArray(data.history) ? data.history : [];
+
+        countElement.textContent =
+            (data.totalLogEntries ?? events.length) + " total entries";
+
+        container.replaceChildren();
+
+        if (events.length === 0) {
+            const empty = document.createElement("p");
+            empty.className = "muted";
+            empty.textContent = "No history events available yet.";
+            container.appendChild(empty);
+            return;
+        }
+
+        // History API already returns newest-first.
+        events.forEach(event => {
+            const row = document.createElement("div");
+            row.className = "history-event";
+
+            const type = document.createElement("div");
+            const rawType = String(event.type || "INFO").toLowerCase();
+
+            type.className = "history-type " +
+                (["recovery", "warning", "error"].includes(rawType)
+                    ? rawType
+                    : "info");
+
+            type.textContent = rawType.toUpperCase();
+
+            const message = document.createElement("div");
+            message.className = "history-message";
+            message.textContent = String(event.message || "");
+
+            row.append(type, message);
+            container.appendChild(row);
+        });
+
+    } catch (error) {
+        countElement.textContent = "Unavailable";
+        container.replaceChildren();
+
+        const message = document.createElement("p");
+        message.className = "muted";
+        message.textContent =
+            "Unable to load recovery history. Check /api/monitoring/history. " +
+            error.message;
+
+        container.appendChild(message);
+
+    } finally {
+        isHistoryLoading = false;
+    }
+}
+
+document.getElementById("refreshButton").addEventListener("click", () => {
+    loadMonitoring();
+    loadRecoveryHistory();
+});
+
+loadMonitoring();
+loadRecoveryHistory();
+
+setInterval(loadMonitoring, REFRESH_INTERVAL);
+setInterval(loadRecoveryHistory, REFRESH_INTERVAL);
+setInterval(updateUptimeDisplay, 1000);
+</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+**/target/
+**/recovery.log
+**/*.pem
+**/.env
+**/.env.*
+!**/.env.example
+
+*.zip
+**/*backup*
